@@ -27,25 +27,27 @@ Section 3.3 in the Hitchhiker's Guide. -/
 
 theorem B (a b c : Prop) :
     (a → b) → (c → a) → c → b :=
-  sorry
+  fun hab hca hc => hab (hca hc)
 
 theorem S (a b c : Prop) :
     (a → b → c) → (a → b) → a → c :=
-  sorry
+  fun habc hab ha => habc ha (hab ha)
 
 theorem more_nonsense (a b c : Prop) :
     (c → (a → b) → a) → c → b → a :=
-  sorry
+  fun hcaab hc hb => hcaab hc (fun _ => hb)
 
 theorem even_more_nonsense (a b c : Prop) :
     (a → a → b) → (b → c) → a → b → c :=
-  sorry
+  fun haab hbc ha hb =>
+      -- Note: haab and ha are not used in this proof, as hb is directly available.
+      hbc hb
 
 /- 1.2 (1 point). Prove the following theorem using basic tactics. -/
 
 theorem weak_peirce (a b : Prop) :
     ((((a → b) → a) → a) → b) → b :=
-  sorry
+  fun h => h (fun f => f (fun ha => h (fun _ => ha)))
 
 
 /- ## Question 2 (7 points): Logical Connectives
@@ -64,7 +66,10 @@ Hints:
 
 theorem about_Impl (a b : Prop) :
     ¬ a ∨ b → a → b :=
-  sorry
+  fun hnaob ha =>
+    hnaob.elim
+      (fun hna => False.elim (hna ha))
+      (fun hb => hb)
 
 /- 2.2 (2 points). Prove the missing link in our chain of classical axiom
 implications.
@@ -89,7 +94,11 @@ Hints:
 
 theorem EM_of_DN :
     DoubleNegation → ExcludedMiddle :=
-  sorry
+  fun hdn a =>
+    hdn (a ∨ ¬a) (fun h : ¬ (a ∨ ¬ a) =>
+      have h_not_a : ¬ a := fun ha => h (Or.inl ha)
+      have h_not_not_a : ¬ ¬ a := fun hna => h (Or.inr hna)
+      h_not_not_a h_not_a)
 
 /- 2.3 (2 points). We have proved three of the six possible implications
 between `ExcludedMiddle`, `Peirce`, and `DoubleNegation`. State and prove the
@@ -104,12 +113,23 @@ three missing implications, exploiting the three theorems we already have. -/
 /- 2.3 (2 points). Fill in the body of the function reverse that reverses a List.
   Then write down the proof for reverse_append -/
 
-def reverse {α : Type} : List α → List α := sorry
+def reverse {α : Type} : List α → List α :=
+  fun
+  | [] => []
+  | x :: xs => reverse xs ++ [x]
 
 
 theorem reverse_append {α : Type} :
     ∀xs ys : List α,
-      reverse (xs ++ ys) = reverse ys ++ reverse xs := sorry
+      reverse (xs ++ ys) = reverse ys ++ reverse xs :=
+  by
+    intro xs ys
+    induction xs with
+    | nil => simp [reverse]
+    | cons x xs ih =>
+      simp [reverse, List.append_assoc]
+      rw [ih]
+      apply List.append_assoc
 
 end BackwardProofs
 
